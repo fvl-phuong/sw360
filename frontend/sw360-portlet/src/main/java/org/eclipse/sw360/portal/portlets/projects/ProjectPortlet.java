@@ -16,10 +16,14 @@ import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import com.liferay.portal.kernel.json.*;
 import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.servlet.SessionMessages;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import com.liferay.portal.kernel.util.WebKeys;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
@@ -197,8 +201,38 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveAttachmentUsagesRows(request, response);
         } else if (PortalConstants.SAVE_ATTACHMENT_USAGES.equals(action)) {
             saveAttachmentUsages(request, response);
+        } else if (PortalConstants.IMPORT_BOM.equals(action)) {
+            importBom(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
+        }
+    }
+
+    private void importBom(ResourceRequest request, ResourceResponse response) {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+
+        try {
+            final RequestSummary requestSummary = projectClient.importBomFromAttachmentContent(user, attachmentContentId);
+
+            String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
+            ThemeDisplay tD = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+            long plid = tD.getPlid();
+
+            LiferayPortletURL projectUrl = PortletURLFactoryUtil.create(request, portletId, plid,
+                    PortletRequest.RENDER_PHASE);
+            projectUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
+            projectUrl.setParameter(PortalConstants.PROJECT_ID, requestSummary.getMessage());
+
+
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            jsonObject.put("redirectUrl", projectUrl.toString());
+
+            renderRequestSummary(request, response, requestSummary, jsonObject);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
         }
     }
 

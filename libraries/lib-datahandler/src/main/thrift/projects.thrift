@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -21,6 +21,7 @@ namespace java org.eclipse.sw360.datahandler.thrift.projects
 namespace php sw360.thrift.projects
 
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.RequestSummary RequestSummary
 typedef sw360.DocumentState DocumentState
 typedef sw360.Visibility Visibility
 typedef sw360.ReleaseRelationship ReleaseRelationship
@@ -336,4 +337,9 @@ service ProjectService {
      * external ids can have multiple values to one key
      */
     set<Project> searchByExternalIds(1: map<string, set<string>> externalIds, 2: User user);
+
+    /**
+     * parse a bom file and write the information to SW360
+     **/
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
 }

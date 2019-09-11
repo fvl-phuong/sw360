@@ -684,4 +684,9 @@ service ComponentService {
      * Gets releases referencing the given release id
      */ 
     list<Release> getReferencingReleases(1: string releaseId);
+
+    /**
+     * parse a bom file and write the information to SW360
+     **/
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
 }
